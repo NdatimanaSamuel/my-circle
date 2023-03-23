@@ -1,11 +1,27 @@
 version: 2.1
 
-orbs:
-  node: circleci/node@5.0.3
-
 jobs:
   test:
-    executor: node/default # use the default executor specified by the orb
+    docker:
+      - image: cimg/node:18.15.0
     steps:
       - checkout
-      - node/install-packages # Use a command from the orb in a job's steps
+      - restore_cache:
+          keys:
+            - node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
+      - run:
+          name: install packages
+          command: npm ci
+      - save_cache:
+          key: node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
+          paths:
+            - ~/.npm
+      - run:
+          name: Run Tests
+          command: npm run test
+
+workflows:
+  test_my_app:
+    jobs:
+      - test
+
